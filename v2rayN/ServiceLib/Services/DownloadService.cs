@@ -13,6 +13,20 @@ public class DownloadService
 
     private static readonly string _tag = "DownloadService";
 
+    private static string GetOrCreateHwid()
+    {
+        var path = Path.Combine(Utils.GetConfigPath(), "hwid.txt");
+
+        if (File.Exists(path))
+        {
+            return File.ReadAllText(path).Trim();
+        }
+
+        var hwid = Guid.NewGuid().ToString("N");
+        File.WriteAllText(path, hwid);
+        return hwid;
+    }
+
     public async Task<int> DownloadDataAsync(string url, WebProxy webProxy, int downloadTimeout, Func<bool, string, Task> updateFunc)
     {
         try
@@ -147,6 +161,10 @@ public class DownloadService
                 userAgent = Utils.GetVersion(false);
             }
             client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent);
+            client.DefaultRequestHeaders.TryAddWithoutValidation(
+                "x-hwid",
+                GetOrCreateHwid()
+            );
 
             Uri uri = new(url);
             //Authorization Header
